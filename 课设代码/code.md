@@ -546,14 +546,3 @@ void saomiaoqi::kongzhi()
 			break;
 	}
 }
-
-int main()
-{
-	saomiaoqi C;
-	C.kongzhi();
-	for (int i = 0; i < ptr; i++)
-	{
-		cout << "<" << token[i].type << "," << token[i].number<<"," << token[i].content << ">" << " ";
-	}
-	system("pause");
-}
