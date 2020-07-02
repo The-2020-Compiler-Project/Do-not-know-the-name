@@ -37,6 +37,7 @@ private:
 	int state;//自动机的状态
 	char st[10];//识别出来的字符串
 	int num;//st下标，用于判断双目运算符
+	int key = 0;//语法出错标志
 };
 
 //判断是否为字母
@@ -108,7 +109,13 @@ int saomiaoqi::IsJiefu(char *mark)
 int saomiaoqi::Change_State(int state, char ch)
 {
 	if ((ch == ' ') || (ch == '\t') || (ch == '\n'))
-		return 0;
+	{
+		if (state == 5)
+			return 6;
+		if (state == 8)
+			return 9;
+		else return 0;
+	}
 	else if (IsWord(ch))
 	{
 		if (state == 1 || state == 2)
@@ -125,14 +132,22 @@ int saomiaoqi::Change_State(int state, char ch)
 			memset(st, 0, 10);
 			return 2;
 		}
-		else return -1;
+		else
+		{
+			key = 1;
+			return 2;
+		}
 	}
-	else if (IsNumber(ch) == 1)
+	else if (IsNumber(ch))
 	{
 		if (state == 1 || state == 3 || state == 4)
 			return 3;
 		else if (state == 2)
 			return 2;
+		else if (state == 5)
+			return 6;
+		else if (state == 8 || state == 9)
+			return 9;
 		else if (state == 11)
 		{
 			st[num] = '\0';
@@ -141,14 +156,20 @@ int saomiaoqi::Change_State(int state, char ch)
 			memset(st, 0, 10);
 			return 3;
 		}
-		else return -1;
+		else
+		{
+			key = 1;
+			return 2;
+		}
 	}
 	else if (ch == '_')
 	{
 		if (state == 1 || state == 2)
-		{
 			return 2;
-		}
+		else if (state = 5)
+			return 6;
+		else if (state == 8 || state == 9)
+			return 9;
 		else if (state == 11)
 		{
 			st[num] = '\0';
@@ -157,7 +178,11 @@ int saomiaoqi::Change_State(int state, char ch)
 			memset(st, 0, 10);
 			return 2;
 		}
-		else return -1;
+		else
+		{
+			key = 1;
+			return 2;
+		}
 	}
 	else if (ch == '.')
 	{
@@ -165,7 +190,15 @@ int saomiaoqi::Change_State(int state, char ch)
 			return 11;
 		else if (state == 3)
 			return 4;
-		else return -1;
+		else if (state = 5)
+			return 6;
+		else if (state == 8 || state == 9)
+			return 9;
+		else
+		{
+			key = 1;
+			return 2;
+		}
 	}
 	else if (ch == '\'')
 	{
@@ -183,7 +216,11 @@ int saomiaoqi::Change_State(int state, char ch)
 			memset(st, 0, 10);
 			return 5;
 		}
-		else return -1;
+		else
+		{
+			key = 1;
+			return 2;
+		}
 	}
 	else if (ch == '\"')
 	{
@@ -199,7 +236,11 @@ int saomiaoqi::Change_State(int state, char ch)
 			memset(st, 0, 10);
 			return 8;
 		}
-		else return -1;
+		else
+		{
+			key = 1;
+			return 2;
+		}
 	}
 	else
 	{
@@ -209,31 +250,15 @@ int saomiaoqi::Change_State(int state, char ch)
 		{
 			return 9;
 		}
-		else if (state == 2)
+		else if (state == 5)
 		{
-			st[num] = '\0';
-			Fenxi(state_left);
-			num = 0;
-			memset(st, 0, 10);
-			return 11;
+			return 6;
 		}
-		else if (state == 3)
+		else if (state == 8 || state == 9)
 		{
-			st[num] = '\0';
-			Fenxi(state_left);
-			num = 0;
-			memset(st, 0, 10);
-			return 11;
+			return 9;
 		}
-		else if (state == 7)
-		{
-			st[num] = '\0';
-			Fenxi(state_left);
-			num = 0;
-			memset(st, 0, 10);
-			return 11;
-		}
-		else if (state == 10)
+		else if ((state == 2) || (state == 3) || (state == 7) || (state == 10))
 		{
 			st[num] = '\0';
 			Fenxi(state_left);
@@ -249,69 +274,131 @@ int saomiaoqi::Change_State(int state, char ch)
 				return 11;
 			else if ((num == 1) && (ch == '-') && (st[0] == '-'))
 				return 11;
+			else if ((num == 2))
+			{
+				st[2] = '\0';
+				if (((st[0] == '>=') || (st[0] == '<=') || (st[0] == '==')) && ((ch == '(')))
+				{
+					Fenxi(state_left);
+					num = 0;
+					memset(st, 0, 10);
+					return 0;
+				}
+				else
+					return -1;
+			}
 			else
 			{
 				st[1] = '\0';
 				Fenxi(state_left);
 				num = 0;
 				memset(st, 0, 10);
-				st[0] = ch;
-				st[1] = '\0';
-				Fenxi(state_left);
-				num = 0;
-				memset(st, 0, 10);
-				return 0;
+				return 11;
 			}
 		}
-		else return -1;
+		else
+		{
+			key = 1;
+			return 2;
+		}
 	}
 }
 
 //词法分析器
 void saomiaoqi::Fenxi(int state_left)
 {
-	int i, n, m;
-	switch (state_left)
+	if (key == 1)
 	{
-	case 2://关键字（标识符）
-		for (i = 0; i < 32; ++i)
+		cout << "error" << endl;
+		key = 0;
+		num = 0;
+		memset(st, 0, 10);
+	}
+	else
+	{
+		int i, n, m;
+		switch (state_left)
 		{
-			n = 1;
-			if (strcmp(st, KT[i]) == 0)
+		case 2://关键字（标识符）
+			for (i = 0; i < 32; ++i)
 			{
-				token[ptr].number = i;
-				token[ptr].content = st;
-				token[ptr].type = "KT";
-				ptr++;
-				n = 0;
-				break;
+				n = 1;
+				if (strcmp(st, KT[i]) == 0)
+				{
+					token[ptr].number = i;
+					token[ptr].content = st;
+					token[ptr].type = "KT";
+					ptr++;
+					n = 0;
+					break;
+				}
 			}
-		}
-		if (n == 1)
-		{
-			if (IT[0] == NULL)
+			if (n == 1)
 			{
-				IT[0] = (char*)malloc(sizeof(st));
-				strcpy(IT[0], st);
-				token[ptr].number = i;
+				if (IT[0] == NULL)
+				{
+					IT[0] = (char*)malloc(sizeof(st));
+					strcpy(IT[0], st);
+					token[ptr].number = 0;
+					token[ptr].content = st;
+					token[ptr].type = "IT";
+					ptr++;
+				}
+				else
+				{
+					for (i = 0; i < sizeof(IT) / sizeof(*IT); ++i)
+					{
+						m = 1;
+						if (IT[i] == NULL)
+						{
+							break;
+						}
+						if (strcmp(st, IT[i]) == 0)
+						{
+							token[ptr].number = i;
+							token[ptr].content = st;
+							token[ptr].type = "IT";
+							ptr++;
+							m = 0;
+							break;
+						}
+					}
+					if (m == 1)
+					{
+						IT[i] = (char*)malloc(sizeof(st));
+						strcpy(IT[i], st);
+						token[ptr].number = i;
+						token[ptr].content = st;
+						token[ptr].type = "IT";
+						ptr++;
+					}
+				}
+			}
+			break;
+		case 3://数字
+			if (CT[0] == NULL)
+			{
+				CT[0] = (char*)malloc(sizeof(st));
+				strcpy(CT[0], st);
+				token[ptr].number = 0;
 				token[ptr].content = st;
-				token[ptr].type = "IT";
+				token[ptr].type = "CT";
 				ptr++;
 			}
 			else
 			{
-				for (i = 0; i < sizeof(IT) / sizeof(*IT); ++i)
+				for (i = 0; i < sizeof(CT) / sizeof(*CT); ++i)
 				{
 					m = 1;
-					if (IT[i] == NULL)
+					if (CT[i] == NULL)
 					{
 						break;
 					}
-					if (strcmp(st, IT[i]) == 0)
+					if (strcmp(st, CT[i]) == 0)
 					{
 						token[ptr].number = i;
 						token[ptr].content = st;
-						token[ptr].type = "IT";
+						token[ptr].type = "CT";
 						ptr++;
 						m = 0;
 						break;
@@ -319,151 +406,111 @@ void saomiaoqi::Fenxi(int state_left)
 				}
 				if (m == 1)
 				{
-					IT[i] = (char*)malloc(sizeof(st));
-					strcpy(IT[i], st);
-					token[ptr].number = i;
-					token[ptr].content = st;
-					token[ptr].type = "IT";
-					ptr++;
-				}
-			}
-		}
-		break;
-	case 3://数字
-		if (CT[0] == NULL)
-		{
-			CT[0] = (char*)malloc(sizeof(st));
-			strcpy(CT[0], st);
-			token[ptr].number = 0;
-			token[ptr].content = st;
-			token[ptr].type = "CT";
-			ptr++;
-		}
-		else
-		{
-			for (i = 0; i < sizeof(CT) / sizeof(*CT); ++i)
-			{
-				m = 1;
-				if (CT[i] == NULL)
-				{
-					break;
-				}
-				if (strcmp(st, CT[i]) == 0)
-				{
+					CT[i] = (char*)malloc(sizeof(st));
+					strcpy(CT[i], st);
 					token[ptr].number = i;
 					token[ptr].content = st;
 					token[ptr].type = "CT";
 					ptr++;
-					m = 0;
-					break;
 				}
 			}
-			if (m == 1)
+			break;
+		case 7://字符
+			if (CTT[0] == NULL)
 			{
-				CT[i] = (char*)malloc(sizeof(st));
-				strcpy(CT[i], st);
-				token[ptr].number = i;
-				token[ptr].content = st;
-				token[ptr].type = "CT";
-				ptr++;
-			}
-		}
-		break;
-	case 7://字符
-		if (CTT[0] == NULL)
-		{
-			CTT[0] = (char*)malloc(sizeof(st));
-			strcpy(CTT[0], st);
-			token[ptr].number = 0;
-			token[ptr].content = st;
-			token[ptr].type = "CTT";
-			ptr++;
-		}
-		else
-		{
-			for (i = 0; i < sizeof(CTT) / sizeof(*CTT); ++i)
-			{
-				m = 1;
-				if (CTT[i] == NULL)
-				{
-					break;
-				}
-				if (strcmp(st, CTT[i]) == 0)
-				{
-					token[ptr].number = i;
-					token[ptr].content = st;
-					token[ptr].type = "CTT";
-					ptr++;
-					m = 0;
-					break;
-				}
-			}
-			if (m == 1)
-			{
-				CTT[i] = (char*)malloc(sizeof(st));
-				strcpy(CTT[i], st);
-				token[ptr].number = i;
+				CTT[0] = (char*)malloc(sizeof(st));
+				strcpy(CTT[0], st);
+				token[ptr].number = 0;
 				token[ptr].content = st;
 				token[ptr].type = "CTT";
 				ptr++;
 			}
-		}
-		break;
-	case 10://字符串
-		if (ST[0] == NULL)
-		{
-			ST[0] = (char*)malloc(sizeof(st));
-			strcpy(ST[0], st);
-			token[ptr].number = 0;
-			token[ptr].content = st;
-			token[ptr].type = "ST";
-			ptr++;
-		}
-		else
-		{
-			for (i = 0; i < sizeof(ST) / sizeof(*ST); ++i)
+			else
 			{
-				m = 1;
-				if (ST[i] == NULL)
+				for (i = 0; i < sizeof(CTT) / sizeof(*CTT); ++i)
 				{
-					break;
+					m = 1;
+					if (CTT[i] == NULL)
+					{
+						break;
+					}
+					if (strcmp(st, CTT[i]) == 0)
+					{
+						token[ptr].number = i;
+						token[ptr].content = st;
+						token[ptr].type = "CTT";
+						ptr++;
+						m = 0;
+						break;
+					}
 				}
-				if (strcmp(st, ST[i]) == 0)
+				if (m == 1)
 				{
+					CTT[i] = (char*)malloc(sizeof(st));
+					strcpy(CTT[i], st);
 					token[ptr].number = i;
 					token[ptr].content = st;
-					token[ptr].type = "ST";
+					token[ptr].type = "CTT";
 					ptr++;
-					m = 0;
-					break;
 				}
 			}
-			if (m == 1)
+			break;
+		case 10://字符串
+			if (ST[0] == NULL)
 			{
-				ST[i] = (char*)malloc(sizeof(st));
-				strcpy(ST[i], st);
-				token[ptr].number = i;
+				ST[0] = (char*)malloc(sizeof(st));
+				strcpy(ST[0], st);
+				token[ptr].number = 0;
 				token[ptr].content = st;
 				token[ptr].type = "ST";
 				ptr++;
 			}
-		}
-		break;
-	case 11://界符
-		for (i = 0; i < 26; ++i)
-		{
-			if (strcmp(st, PT[i]) == 0)
+			else
 			{
-				token[ptr].number = i;
-				token[ptr].content = st;
-				token[ptr].type = "PT";
-				ptr++;
-				break;
+				for (i = 0; i < sizeof(ST) / sizeof(*ST); ++i)
+				{
+					m = 1;
+					if (ST[i] == NULL)
+					{
+						break;
+					}
+					if (strcmp(st, ST[i]) == 0)
+					{
+						token[ptr].number = i;
+						token[ptr].content = st;
+						token[ptr].type = "ST";
+						ptr++;
+						m = 0;
+						break;
+					}
+				}
+				if (m == 1)
+				{
+					ST[i] = (char*)malloc(sizeof(st));
+					strcpy(ST[i], st);
+					token[ptr].number = i;
+					token[ptr].content = st;
+					token[ptr].type = "ST";
+					ptr++;
+				}
 			}
+			break;
+		case 11://界符
+			for (i = 0; i < 26; ++i)
+			{
+				if (strcmp(st, PT[i]) == 0)
+				{
+					token[ptr].number = i;
+					token[ptr].content = st;
+					token[ptr].type = "PT";
+					ptr++;
+					break;
+				}
+			}
+			break;
+		default:
+			printf("error");
 		}
-		break;
-	default:
-		printf("error");
 	}
 }
 
@@ -478,14 +525,10 @@ void saomiaoqi::kongzhi()
 		cout << "cann't open C.txt" << endl;
 		exit(1);
 	}
-	while ((ch = fgetc(fp)) != '#')
+	while ((ch = fgetc(fp)))
 	{
 		state_left = state;
 		state = Change_State(state, ch);
-		if (state == -1)
-		{
-			printf("error");
-		}
 		if (state != 0)
 		{
 			st[num++] = ch;
@@ -499,5 +542,18 @@ void saomiaoqi::kongzhi()
 			num = 0;
 			state = 1;
 		}
+		if (ch == '#')
+			break;
 	}
+}
+
+int main()
+{
+	saomiaoqi C;
+	C.kongzhi();
+	for (int i = 0; i < ptr; i++)
+	{
+		cout << "<" << token[i].type << "," << token[i].number<<"," << token[i].content << ">" << " ";
+	}
+	system("pause");
 }
