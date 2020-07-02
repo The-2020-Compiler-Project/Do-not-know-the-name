@@ -38,6 +38,8 @@ private:
 	char st[10];//识别出来的字符串
 	int num;//st下标，用于判断双目运算符
 	int key = 0;//语法出错标志
+	int key1 = 0;//遇到'.'的标志
+	int key2 = 0;//遇到"."的标志
 };
 
 //判断是否为字母
@@ -285,7 +287,10 @@ int saomiaoqi::Change_State(int state, char ch)
 					return 0;
 				}
 				else
-					return -1;
+				{
+					key = 1;
+					return 2;
+				}
 			}
 			else
 			{
