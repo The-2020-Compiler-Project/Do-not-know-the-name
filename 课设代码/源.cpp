@@ -38,6 +38,7 @@ private:
 	int num;//st下标，用于判断双目运算符
 	int key = 0;//语法出错标志
 	int hangshu = 1;//行数
+	int key1 = 0;//回车标志
 };
 
 //判断是否为字母
@@ -68,11 +69,11 @@ int saomiaoqi::IsNumber(char a)
 
 //识别器(有限制动机)
 //自动机说明状态说明：
-//1： 初始状态 2：   关键字/标识符
-//3： 正整数   4：   小数点  12:小数
-//5： 单引号   6：   没遇到引号的字符
-//7： 字符     10：   字符串
-//11：界符
+//1： 初始状态    2： 关键字/标识符
+//3： 正整数      4： 小数点  
+//5： 单引号      6： 没遇到引号的字符
+//7： 字符        10：字符串
+//11：界符        12: 小数
 int saomiaoqi::Change_State(int state, char ch)
 {
 	if ((ch == ' ') || (ch == '\t') || (ch == '\n'))
@@ -81,13 +82,16 @@ int saomiaoqi::Change_State(int state, char ch)
 		{
 			if (st[num - 1] == ';' || st[num - 1] == '{' || st[num - 1] == '}' || st[num - 1] == ')')
 			{
-				
+
 			}
+			else if (key1 == 1)
+				key1 = 0;
 			else
 			{
 				cout << "第" << hangshu << "行没有';'" << endl;
 			}
 			hangshu++;
+			key1 = 1;
 		}
 		if (state == 5)
 			return 6;
@@ -124,8 +128,12 @@ int saomiaoqi::Change_State(int state, char ch)
 	}
 	else if (IsNumber(ch))
 	{
-		if (state == 1 || state == 3 || state == 4)
+		if (state == 1 || state == 3)
 			return 3;
+		else if (state == 4)
+			return 12;
+		else if (state == 12)
+			return 12;
 		else if (state == 2 && st[num - 1] != '.')
 			return 2;
 		else if (state == 5)
@@ -210,7 +218,7 @@ int saomiaoqi::Change_State(int state, char ch)
 			Fenxi(state_left);
 			num = 0;
 			memset(st, 0, 10);
-			return 5;
+			return 12;
 		}
 	}
 	else if (ch == '\'')
@@ -273,7 +281,7 @@ int saomiaoqi::Change_State(int state, char ch)
 			return 6;
 		else if (state == 8 || state == 9)
 			return 9;
-		else if ((state == 2) || (state == 3) || (state == 7) || (state == 10))
+		else if ((state == 2) || (state == 3) || (state == 7) || (state == 10) || (state == 12))
 		{
 			st[num] = '\0';
 			Fenxi(state_left);
@@ -320,7 +328,7 @@ void saomiaoqi::Fenxi(int state_left)
 {
 	if (key == 1)
 	{
-		cout << "第" << hangshu << "行" << st << "有问题" << endl;
+		cout << "第" << hangshu << "行  " << st << "  错误" << endl;
 		key = 0;
 		num = 0;
 		memset(st, 0, 10);
@@ -519,9 +527,49 @@ void saomiaoqi::Fenxi(int state_left)
 				}
 			}
 			break;
+		case 12://数字
+			if (XT[0] == NULL)
+			{
+				XT[0] = (char*)malloc(sizeof(st));
+				strcpy(XT[0], st);
+				token[ptr].number = 0;
+				token[ptr].content = st;
+				token[ptr].type = "XT";
+				ptr++;
+			}
+			else
+			{
+				for (i = 0; i < sizeof(XT) / sizeof(*XT); ++i)
+				{
+					m = 1;
+					if (XT[i] == NULL)
+					{
+						break;
+					}
+					if (strcmp(st, XT[i]) == 0)
+					{
+						token[ptr].number = i;
+						token[ptr].content = st;
+						token[ptr].type = "XT";
+						ptr++;
+						m = 0;
+						break;
+					}
+				}
+				if (m == 1)
+				{
+					XT[i] = (char*)malloc(sizeof(st));
+					strcpy(XT[i], st);
+					token[ptr].number = i;
+					token[ptr].content = st;
+					token[ptr].type = "XT";
+					ptr++;
+				}
+			}
+			break;
 		default:
 		{
-			cout << "第" << hangshu << "行" << st << "有问题" << endl;
+			cout << "第" << hangshu << "行  " << st << "  错误" << endl;
 			key = 0;
 			num = 0;
 			memset(st, 0, 10);
